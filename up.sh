@@ -28,10 +28,3 @@ git commit -m 'Initial Commit'
 git push codecommit::us-east-1://sample-app --all --force
 rm -Rf .git
 cd .. 
-
-cp kubeconfig_shire-cluster lambdas/config
-sed -i "s/command: aws-iam-authenticator/command: .\/bin\/aws-iam-authenticator/g" lambdas/config
-chmod a+rw ./lambdas/config
-cd lambdas
-zip -r kubectl.zip .
-cd ..

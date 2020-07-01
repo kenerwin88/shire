@@ -58,7 +58,7 @@ resource "aws_security_group_rule" "intranet" {
 # Instance Profile
 resource "aws_iam_instance_profile" "eks_admin_profile" {
   name = "eks_admin_profile"
-  role = aws_iam_role.eksAdminRole.name
+  role = aws_iam_role.eks_service_role.id
 }
 
 # Create EC2 Instance
@@ -69,7 +69,7 @@ resource "aws_instance" "bastion" {
   subnet_id                   = module.vpc.public_subnets[0]
   vpc_security_group_ids      = [aws_security_group.bastion.id]
   associate_public_ip_address = true
-  iam_instance_profile = aws_iam_instance_profile.eks_admin_profile.name
+  iam_instance_profile        = aws_iam_instance_profile.eks_admin_profile.name
 
   root_block_device {
     volume_size           = 10

@@ -22,7 +22,7 @@ resource "aws_codebuild_project" "sampleAppProject" {
   name          = "sample-app-project"
   description   = "Automated Build for Sample App using CodeBuild"
   build_timeout = "5"
-  service_role  = aws_iam_role.eksAdminRole.arn
+  service_role  = aws_iam_role.eks_service_role.arn
 
   artifacts {
     type = "NO_ARTIFACTS"
@@ -73,3 +73,124 @@ resource "aws_codebuild_project" "sampleAppProject" {
     Environment = "Test"
   }
 } 
+
+# CodePipeline
+resource "aws_codepipeline" "codepipeline" {
+  name     = "sample-app-pipeline"
+  role_arn = aws_iam_role.codepipeline_service_role.arn
+
+  artifact_store {
+    location = aws_s3_bucket.codepipeline.bucket
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeCommit"
+      version          = "1"
+      output_artifacts = ["SourceArtifact"]
+
+      configuration = {
+        RepositoryName = "sample-app"
+        BranchName     = "master"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name             = "Build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildOutput"]
+      version          = "1"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.sampleAppProject.name
+      }
+    }
+  }
+
+  stage {
+    name = "Deploy-Dev"
+
+    action {
+      name            = "Lambda"
+      category        = "Invoke"
+      owner           = "AWS"
+      provider        = "Lambda"
+      input_artifacts = ["BuildOutput"]
+      version         = "1"
+
+      configuration = {
+        FunctionName   = "helm"
+        UserParameters = "namespace=dev,application=terraria"
+      }
+    }
+  }
+
+  stage {
+    name = "Deploy-Stage"
+
+    action {
+      name            = "ApproveDeployToStage"
+      category        = "Approval"
+      owner           = "AWS"
+      provider        = "Manual"
+      version         = "1"
+      run_order        = "1"
+    }
+
+    action {
+      name            = "Lambda"
+      category        = "Invoke"
+      owner           = "AWS"
+      provider        = "Lambda"
+      input_artifacts = ["BuildOutput"]
+      version         = "1"
+
+      configuration = {
+        FunctionName   = "helm"
+        UserParameters = "namespace=stage,application=terraria"
+      }
+      run_order        = "2"
+    }
+  }
+
+  stage {
+    name = "Deploy-Prod"
+
+    action {
+      name            = "ApproveDeployToProd"
+      category        = "Approval"
+      owner           = "AWS"
+      provider        = "Manual"
+      version         = "1"
+      run_order        = "1"
+    }
+
+    action {
+      name            = "Lambda"
+      category        = "Invoke"
+      owner           = "AWS"
+      provider        = "Lambda"
+      input_artifacts = ["BuildOutput"]
+      version         = "1"
+
+      configuration = {
+        FunctionName   = "helm"
+        UserParameters = "namespace=prod,application=terraria"
+      }
+      run_order        = "2"
+    }
+  }
+}

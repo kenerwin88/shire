@@ -23,13 +23,13 @@ variable "private_key" {
 }
 
 variable "terraform_s3_bucket" {
-  type    = string
+  type = string
 }
 
 variable "logs_s3_bucket" {
-  type    = string
+  type = string
 }
 
 variable "codepipeline_s3_bucket" {
-  type    = string
+  type = string
 }

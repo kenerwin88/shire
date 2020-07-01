@@ -15,9 +15,9 @@ module "eks" {
   ]
   map_users = [
     {
-      userarn = aws_iam_role.eksAdminRole.arn
+      userarn  = aws_iam_role.eks_service_role.arn
       username = "eksAdmin"
-      groups = ["system:masters"]
+      groups   = ["system:masters"]
     }
   ]
 }
