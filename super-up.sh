@@ -52,11 +52,35 @@ while $LOGS_BUCKET_EXISTS; do
   fi
 done
 
+# CodePipeline S3 Check
+CODEPIPELINE_BUCKET_NAME="$environmentName-codepipeline"
+echo -e "\n💭 Ok, we need an S3 bucket to store codepipeline artifacts in, lets see if $CODEPIPELINE_BUCKET_NAME is available..."
+echo "💭 Checking S3 bucket exists..."
+
+CODEPIPELINE_BUCKET_EXISTS=true                                                                                                                                                                                                                            
+while $CODEPIPELINE_BUCKET_EXISTS; do
+  S3_CHECK=$(aws s3 ls "s3://${CODEPIPELINE_BUCKET_NAME}" 2>&1)                                                                                                                                                 
+  if [ $? != 0 ]
+    then
+    NO_BUCKET_CHECK=$(echo $S3_CHECK | grep -c 'NoSuchBucket')
+    if [ $NO_BUCKET_CHECK = 1 ]; then
+      echo "😄 $CODEPIPELINE_BUCKET_NAME Bucket does not exist, we'll use it!"
+      CODEPIPELINE_BUCKET_EXISTS=false
+    else 
+      echo "😥 Error checking S3 Bucket, someone must have taken it or you don't have the aws cli tools installed!"
+      SUFFIX=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 5 | head -n 1)    
+      CODEPIPELINE_BUCKET_NAME="$environmentName-$SUFFIX-codepipeline"
+      echo "😥 Sorry but we're going to try $CODEPIPELINE_BUCKET_NAME out instead..."
+    fi 
+  fi
+done
+
 # Save Settings
 echo -e "\n😀 Looks like we are good to go, saving settings to terraform.tfvars."
 echo "name = \"$environmentName\"" > terraform.tfvars
 echo "terraform_s3_bucket = \"$TERRAFORM_BUCKET_NAME\"" >> terraform.tfvars
 echo "logs_s3_bucket = \"$LOGS_BUCKET_NAME"\" >> terraform.tfvars
+echo "codepipeline_s3_bucket = \"$CODEPIPELINE_BUCKET_NAME"\" >> terraform.tfvars
 
 # Create Backend Buckets and DynamoDB
 echo ""

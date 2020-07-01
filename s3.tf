@@ -50,3 +50,23 @@ resource "aws_s3_bucket" "terraform" {
   }
   force_destroy = true
 }
+
+# CodePipeline Artifact Bucket
+resource "aws_s3_bucket" "codepipeline" {
+  bucket = var.codepipeline_s3_bucket
+  acl    = "private"
+
+  tags = {
+    Name    = var.codepipeline_s3_bucket
+    Purpose = "Artifact storage for CodePipeline"
+  }
+
+  logging {
+    target_bucket = aws_s3_bucket.logs.id
+    target_prefix = "logs/codepipeline"
+  }
+  versioning {
+    enabled = false
+  }
+  force_destroy = true
+}

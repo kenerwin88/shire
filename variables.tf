@@ -29,3 +29,7 @@ variable "terraform_s3_bucket" {
 variable "logs_s3_bucket" {
   type    = string
 }
+
+variable "codepipeline_s3_bucket" {
+  type    = string
+}
